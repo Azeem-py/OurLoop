@@ -16,13 +16,13 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Us — A Private World for Two",
-  description: "A private, just-the-two-of-you space for love, memories, diary and chat across distances.",
+  title: "OurLoop — A Private World for Two",
+  description: "OurLoop — A private, just-the-two-of-you space for love, memories, diary and chat across distances.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Us",
+    title: "OurLoop",
   },
 };
 

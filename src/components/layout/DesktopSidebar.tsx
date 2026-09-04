@@ -80,7 +80,7 @@ export function DesktopSidebar({ user, partner, inviteCode }: DesktopSidebarProp
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-[#F6F3EE] font-serif">
-                Us
+                OurLoop
               </h1>
               <p className="text-[10px] text-[#9992A8] tracking-wide">A private world for two</p>
             </div>

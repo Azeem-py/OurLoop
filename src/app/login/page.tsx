@@ -62,7 +62,7 @@ export default function LoginPage() {
             <Heart className="w-6 h-6 fill-[#0E0D13]" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-[#F6F3EE] font-serif">
-            Us
+            OurLoop
           </h1>
           <p className="text-xs text-[#9992A8] mt-1 font-light leading-relaxed">
             A private world for two. Two skies, one shared horizon.

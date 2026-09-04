@@ -1,7 +1,7 @@
 {
-  "name": "Us — A Private World for Two",
-  "short_name": "Us",
-  "description": "A private, just-the-two-of-you space for love, memories, diary and chat.",
+  "name": "OurLoop — A Private World for Two",
+  "short_name": "OurLoop",
+  "description": "OurLoop — A private, just-the-two-of-you space for love, memories, diary and chat.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#211E36",
