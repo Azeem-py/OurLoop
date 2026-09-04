@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Image as ImageIcon, Check, CheckCheck, BookmarkPlus, Sparkles, Smile } from "lucide-react";
+import { Send, Image as ImageIcon, Check, CheckCheck, BookmarkPlus, Sparkles, Camera } from "lucide-react";
 import { format } from "date-fns";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { VoiceNotePlayer } from "./VoiceNotePlayer";
+import { CameraModal } from "@/components/common/CameraModal";
 
 export interface ChatMessageItem {
   id: string;
@@ -40,6 +41,7 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
   const [text, setText] = useState("");
   const [activeReactionMessageId, setActiveReactionMessageId] = useState<string | null>(null);
   const [savedToGalleryId, setSavedToGalleryId] = useState<string | null>(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -127,10 +129,7 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
     }
   }
 
-  async function handleMediaUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  async function uploadMediaFile(file: File) {
     const isVid = file.type.startsWith("video/");
     const formData = new FormData();
     formData.append("file", file);
@@ -160,6 +159,15 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
       }
     } catch (err) {
       console.error("Chat media upload error:", err);
+    }
+  }
+
+  async function handleMediaUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadMediaFile(file);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   }
 
@@ -360,15 +368,25 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
 
       {/* Input Bar */}
       <div className="p-3.5 md:py-4 bg-[#14121A]/95 border-t border-[#242031] backdrop-blur-md">
-        <form onSubmit={handleSendText} className="max-w-3xl lg:max-w-4xl mx-auto w-full flex items-center gap-2.5">
-          {/* Media upload button */}
+        <form onSubmit={handleSendText} className="max-w-3xl lg:max-w-4xl mx-auto w-full flex items-center gap-2">
+          {/* Camera snap button */}
+          <button
+            type="button"
+            onClick={() => setIsCameraOpen(true)}
+            className="p-2.5 rounded-xl bg-[#1A1824] hover:bg-[#221F2D] text-[#E26D54] hover:text-[#D05E46] border border-white/[0.05] transition-colors shrink-0 group"
+            title="Take Photo"
+          >
+            <Camera className="w-5 h-5 group-hover:scale-110 transition-transform" />
+          </button>
+
+          {/* Media upload button from gallery */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="p-2.5 rounded-xl bg-[#1A1824] hover:bg-[#221F2D] text-[#9992A8] hover:text-[#F6F3EE] border border-white/[0.05] transition-colors shrink-0"
-            title="Attach Photo or Video"
+            className="p-2.5 rounded-xl bg-[#1A1824] hover:bg-[#221F2D] text-[#9992A8] hover:text-[#F6F3EE] border border-white/[0.05] transition-colors shrink-0 group"
+            title="Attach Photo or Video from Gallery"
           >
-            <ImageIcon className="w-5 h-5" />
+            <ImageIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
           </button>
           <input
             type="file"
@@ -400,6 +418,14 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
           </button>
         </form>
       </div>
+
+      {/* Live Camera Modal */}
+      <CameraModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={uploadMediaFile}
+        title={`Take Photo for ${partnerName}`}
+      />
     </div>
   );
 }
