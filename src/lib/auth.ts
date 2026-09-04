@@ -3,7 +3,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 
-const AUTH_COOKIE_NAME = "us_auth_token";
+export const AUTH_COOKIE_NAME = "us_auth_token";
 const SECRET = process.env.AUTH_SECRET || "fallback-secret-for-dev-only-change-in-prod";
 
 export interface SessionPayload {

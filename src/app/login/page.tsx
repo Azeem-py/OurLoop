@@ -1,11 +1,44 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Heart, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 
-export default function LoginPage() {
+function GoogleIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#EA4335"
+        d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
+      />
+    </svg>
+  );
+}
+
+function getErrorMessage(err: string | null): string | null {
+  if (!err) return null;
+  if (err === "access_denied") return "Google sign-in was cancelled.";
+  if (err === "invalid_state") return "Security check failed or session expired. Please try signing in again.";
+  if (err === "missing_code" || err === "token_exchange_failed") return "Google authorization failed. Please try again.";
+  if (err === "oauth_configuration_error") return "Google OAuth is not configured properly on the server.";
+  return `Sign in failed: ${err}`;
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,6 +46,9 @@ export default function LoginPage() {
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const oauthError = getErrorMessage(searchParams.get("error"));
+  const activeError = error || oauthError;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,8 +82,8 @@ export default function LoginPage() {
         router.push("/pair");
       }
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -71,6 +107,22 @@ export default function LoginPage() {
 
         {/* Form Card */}
         <div className="w-full bg-[#171520] border border-[#292536] rounded-3xl p-6 sm:p-8 shadow-2xl">
+          {/* Sign In with Google */}
+          <a
+            href="/api/auth/google"
+            className="w-full py-3 px-4 rounded-xl bg-[#100F17] hover:bg-[#1E1B29] border border-[#292536] text-[#F6F3EE] font-medium text-xs sm:text-sm flex items-center justify-center gap-3 transition-all duration-200 hover:border-[#4B4461] shadow-sm group"
+          >
+            <GoogleIcon className="w-4 h-4 transition-transform group-hover:scale-110" />
+            <span>Continue with Google</span>
+          </a>
+
+          <div className="relative flex items-center justify-center my-6">
+            <div className="border-t border-[#242031] w-full" />
+            <span className="bg-[#171520] px-3 text-[10px] uppercase tracking-wider text-[#9992A8]/70 absolute">
+              or continue with email
+            </span>
+          </div>
+
           <div className="flex items-center gap-6 border-b border-[#242031] pb-3 mb-6">
             <button
               type="button"
@@ -98,9 +150,9 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {error && (
-            <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
-              {error}
+          {activeError && (
+            <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs leading-relaxed">
+              {activeError}
             </div>
           )}
 
@@ -184,5 +236,19 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#0E0D13] flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-[#E26D54]" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
