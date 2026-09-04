@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
+@theme {
+  --color-obsidian-950: #0E0D13;
+  --color-obsidian-900: #14121A;
+  --color-obsidian-850: #1A1822;
+  --color-obsidian-800: #221F2D;
+  --color-obsidian-700: #2C283B;
+  --color-obsidian-600: #3D3850;
+
+  --color-terracotta-500: #E26D54;
+  --color-terracotta-600: #D05E46;
+  --color-parchment-400: #E5B268;
+  --color-parchment-500: #D8A252;
+
+  --color-pearl-50: #F6F3EE;
+  --color-pearl-100: #EDE7DC;
+  --color-mist-300: #BBB4CA;
+  --color-mist-400: #9992A8;
+  --color-mist-500: #787285;
+
+  /* Backward compatibility with existing component classes */
+  --color-ink-950: #0E0D13;
+  --color-ink-900: #14121A;
+  --color-plum-900: #1A1822;
+  --color-plum-800: #221F2D;
+  --color-plum-700: #2C283B;
+  --color-ember-500: #E26D54;
+  --color-ember-600: #D05E46;
+  --color-gold-400: #E5B268;
+  --color-gold-500: #D8A252;
+  --color-linen-50: #F6F3EE;
+  --color-linen-100: #EDE7DC;
+  --color-haze-300: #BBB4CA;
+  --color-haze-400: #9992A8;
+  --color-haze-500: #787285;
+
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-body: var(--font-sans-humanist), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-primary: #0E0D13;
+  --bg-surface: #1A1822;
+  --bg-card: #201D2B;
+  --border-subtle: #292536;
+  --text-primary: #F6F3EE;
+  --text-muted: #9992A8;
+  --accent-primary: #E26D54;
+  --accent-secondary: #E5B268;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html, body {
+  background-color: #0E0D13;
+  color: #F6F3EE;
+  font-family: var(--font-body);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Hide scrollbar for clean app feel */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Chat bubble shapes */
+.bubble-sent {
+  border-radius: 18px 18px 4px 18px;
+}
+
+.bubble-received {
+  border-radius: 18px 18px 18px 4px;
+}
+
+/* Archival card border */
+.card-archival {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }

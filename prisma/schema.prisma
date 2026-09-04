@@ -1,0 +1,152 @@
+// Prisma schema for "Us" — A Private World for Two
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String?
+  displayName  String
+  avatarUrl    String?
+  nickname     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships  CoupleMember[]
+  memories     Memory[]
+  diaryEntries DiaryEntry[]
+  messagesSent Message[]
+  reactions    Reaction[]
+}
+
+model Couple {
+  id              String    @id @default(uuid())
+  inviteCode      String    @unique
+  anniversaryDate DateTime?
+  nextVisitDate   DateTime?
+  themeSettings   Json?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  members      CoupleMember[]
+  memories     Memory[]
+  diaryEntries DiaryEntry[]
+  messages     Message[]
+  mediaFiles   MediaFile[]
+}
+
+model CoupleMember {
+  id       String   @id @default(uuid())
+  coupleId String
+  userId   String
+  role     String   @default("MEMBER")
+  joinedAt DateTime @default(now())
+
+  couple Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([coupleId, userId])
+}
+
+model Memory {
+  id            String    @id @default(uuid())
+  coupleId      String
+  userId        String
+  mediaUrl      String
+  mediaType     MediaType
+  thumbnailUrl  String?
+  caption       String?
+  location      String?
+  takenAt       DateTime?
+  momentGroupId String?
+  heartsCount   Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  couple Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DiaryEntry {
+  id             String     @id @default(uuid())
+  coupleId       String
+  userId         String
+  title          String?
+  content        String
+  mood           String?
+  visibility     Visibility @default(SHARED)
+  revealAt       DateTime?
+  imageUrl       String?
+  linkedMemoryId String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  couple Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id          String      @id @default(uuid())
+  coupleId    String
+  senderId    String
+  contentType ContentType
+  contentUrl  String?
+  text        String?
+  replyToId   String?
+  durationSec Int?
+  createdAt   DateTime    @default(now())
+  readAt      DateTime?
+
+  couple    Couple     @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  sender    User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  reactions Reaction[]
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum ContentType {
+  TEXT
+  IMAGE
+  VIDEO
+  VOICE_NOTE
+}
+
+enum Visibility {
+  SHARED
+  PRIVATE_UNTIL
+}
+
+model MediaFile {
+  id        String   @id @default(uuid())
+  coupleId  String?
+  fileName  String
+  mimeType  String
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  couple Couple? @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+}
