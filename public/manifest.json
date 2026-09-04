@@ -1,20 +1,37 @@
 {
+  "id": "app.ourloop.space",
   "name": "OurLoop — A Private World for Two",
   "short_name": "OurLoop",
   "description": "OurLoop — A private, just-the-two-of-you space for love, memories, diary and chat.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#211E36",
-  "theme_color": "#211E36",
+  "orientation": "portrait",
+  "background_color": "#0E0D13",
+  "theme_color": "#0E0D13",
+  "categories": ["lifestyle", "social"],
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icon.png",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
       "type": "image/png"
     }
   ]

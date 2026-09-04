@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { listMemories, createMemory, getOnThisDayItem } from "@/lib/db/memories";
 import { MediaType } from "@prisma/client";
+import { sendPushToPartner } from "@/lib/push";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -38,6 +39,16 @@ export async function POST(req: NextRequest) {
       takenAt: takenAt ? new Date(takenAt) : undefined,
       momentGroupId,
     });
+
+    const senderName = user.nickname || user.displayName || "Your partner";
+    const mediaEmoji = mediaType === "VIDEO" ? "🎥" : "📸";
+    sendPushToPartner(user.id, user.coupleId, {
+      title: `${mediaEmoji} ${senderName} shared a memory`,
+      body: caption || "Added a new memory to your shared gallery.",
+      url: "/memories",
+      image: mediaType === "VIDEO" ? undefined : mediaUrl,
+      tag: "ourloop-memory",
+    }).catch((err) => console.error("Memory push failed:", err));
 
     return NextResponse.json({ memory });
   } catch (error: any) {

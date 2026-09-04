@@ -19,10 +19,22 @@ export const metadata: Metadata = {
   title: "OurLoop — A Private World for Two",
   description: "OurLoop — A private, just-the-two-of-you space for love, memories, diary and chat across distances.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "OurLoop",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
   },
 };
 

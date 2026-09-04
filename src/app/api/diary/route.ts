@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { listDiaryEntries, createDiaryEntry } from "@/lib/db/diary";
 import { Visibility } from "@prisma/client";
+import { sendPushToPartner } from "@/lib/push";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -35,6 +36,17 @@ export async function POST(req: NextRequest) {
       revealAt: revealAt ? new Date(revealAt) : null,
       linkedMemoryId,
     });
+
+    const isShared = visibility !== "PRIVATE_UNTIL";
+    if (isShared) {
+      const senderName = user.nickname || user.displayName || "Your partner";
+      sendPushToPartner(user.id, user.coupleId, {
+        title: `📖 ${senderName} wrote in your diary`,
+        body: title || content.slice(0, 80) || "A new page was added to your story.",
+        url: "/diary",
+        tag: "ourloop-diary",
+      }).catch((err) => console.error("Diary push failed:", err));
+    }
 
     return NextResponse.json({ entry });
   } catch (error: any) {

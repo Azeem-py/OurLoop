@@ -3,6 +3,7 @@
 import { HeaderBar } from "./HeaderBar";
 import { BottomTabBar } from "./BottomTabBar";
 import { DesktopSidebar } from "./DesktopSidebar";
+import { PwaManager } from "../pwa/PwaManager";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -18,8 +19,13 @@ interface AppShellProps {
 }
 
 export function AppShell({ children, user, partner, inviteCode }: AppShellProps) {
+  const partnerName = partner ? partner.nickname || partner.displayName : null;
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#0E0D13] text-[#F6F3EE]">
+      {/* PWA Service Worker, iOS Install Guide & Push Prompts */}
+      <PwaManager partnerName={partnerName} />
+
       {/* Desktop Sidebar (visible on md screens and above) */}
       <DesktopSidebar user={user} partner={partner} inviteCode={inviteCode} />
 

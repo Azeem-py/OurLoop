@@ -11,7 +11,9 @@ import {
   LogOut,
   Copy,
   Check,
+  Bell,
 } from "lucide-react";
+import { NotificationSettingsModal } from "../pwa/NotificationSettingsModal";
 
 interface DesktopSidebarProps {
   user: {
@@ -30,6 +32,7 @@ export function DesktopSidebar({ user, partner, inviteCode }: DesktopSidebarProp
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notifModalOpen, setNotifModalOpen] = useState(false);
 
   useEffect(() => {
     async function checkUnread() {
@@ -171,7 +174,15 @@ export function DesktopSidebar({ user, partner, inviteCode }: DesktopSidebarProp
       </div>
 
       {/* Bottom User Controls */}
-      <div className="pt-4 border-t border-[#242031]">
+      <div className="pt-4 border-t border-[#242031] space-y-1">
+        <button
+          onClick={() => setNotifModalOpen(true)}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-[#9992A8] hover:text-[#F6F3EE] hover:bg-white/[0.04] transition-colors"
+        >
+          <Bell className="w-4 h-4 text-[#E26D54]" />
+          <span>Notifications</span>
+        </button>
+
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-[#9992A8] hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
@@ -180,6 +191,12 @@ export function DesktopSidebar({ user, partner, inviteCode }: DesktopSidebarProp
           <span>Log out</span>
         </button>
       </div>
+
+      <NotificationSettingsModal
+        isOpen={notifModalOpen}
+        onClose={() => setNotifModalOpen(false)}
+        partnerName={partner?.nickname || partner?.displayName || "Partner"}
+      />
     </aside>
   );
 }

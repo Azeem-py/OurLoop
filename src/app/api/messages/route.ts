@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { listMessages, createMessage, markMessagesAsRead } from "@/lib/db/messages";
 import { ContentType } from "@prisma/client";
+import { sendPushToPartner } from "@/lib/push";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -37,6 +38,20 @@ export async function POST(req: NextRequest) {
       replyToId,
       durationSec,
     });
+
+    const senderName = user.nickname || user.displayName || "Your love";
+    let bodyPreview = text || "Sent you a message";
+    if (validContentType === ContentType.IMAGE) bodyPreview = "📷 Sent a photo";
+    if (validContentType === ContentType.VIDEO) bodyPreview = "🎥 Sent a video";
+    if (validContentType === ContentType.VOICE_NOTE) bodyPreview = "🎙️ Sent a voice note";
+
+    // Non-blocking push notification to partner
+    sendPushToPartner(user.id, user.coupleId, {
+      title: senderName,
+      body: bodyPreview,
+      url: "/chat",
+      tag: "ourloop-chat",
+    }).catch((err) => console.error("Message push failed:", err));
 
     return NextResponse.json({ message });
   } catch (error: any) {

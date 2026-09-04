@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { LogOut, Copy, Check, HeartHandshake } from "lucide-react";
+import { LogOut, Copy, Check, HeartHandshake, Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { NotificationSettingsModal } from "../pwa/NotificationSettingsModal";
 
 interface HeaderBarProps {
   user: {
@@ -20,6 +21,7 @@ export function HeaderBar({ user, partner, inviteCode }: HeaderBarProps) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notifModalOpen, setNotifModalOpen] = useState(false);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -63,7 +65,16 @@ export function HeaderBar({ user, partner, inviteCode }: HeaderBarProps) {
         </div>
       </div>
 
-      <div className="relative">
+      <div className="flex items-center gap-1 relative">
+        <button
+          onClick={() => setNotifModalOpen(true)}
+          className="p-2 rounded-xl text-[#9992A8] hover:text-[#F6F3EE] hover:bg-[#201D2B] transition-colors"
+          title="Push Notifications"
+          aria-label="Push Notifications"
+        >
+          <Bell className="w-4.5 h-4.5 text-[#E26D54]" />
+        </button>
+
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="p-2 rounded-xl text-[#9992A8] hover:text-[#F6F3EE] hover:bg-[#201D2B] transition-colors"
@@ -75,7 +86,18 @@ export function HeaderBar({ user, partner, inviteCode }: HeaderBarProps) {
         {menuOpen && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-            <div className="absolute right-0 mt-2 w-56 bg-[#171520] border border-[#292536] rounded-2xl shadow-2xl p-2 z-50 text-xs">
+            <div className="absolute right-0 mt-2 top-10 w-56 bg-[#171520] border border-[#292536] rounded-2xl shadow-2xl p-2 z-50 text-xs">
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setNotifModalOpen(true);
+                }}
+                className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#221F2D] flex items-center gap-2 text-[#F6F3EE] transition-colors"
+              >
+                <Bell className="w-4 h-4 text-[#E26D54]" />
+                <span>Push Notifications</span>
+              </button>
+
               {inviteCode && (
                 <button
                   onClick={handleCopyInvite}
@@ -100,6 +122,12 @@ export function HeaderBar({ user, partner, inviteCode }: HeaderBarProps) {
           </>
         )}
       </div>
+
+      <NotificationSettingsModal
+        isOpen={notifModalOpen}
+        onClose={() => setNotifModalOpen(false)}
+        partnerName={partnerName}
+      />
     </header>
   );
 }
