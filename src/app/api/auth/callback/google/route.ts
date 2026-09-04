@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { createToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || req.nextUrl.host;
+  const proto = req.headers.get("x-forwarded-proto") || (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
+  const baseUrl = `${proto}://${host}`;
   const redirectUri = `${baseUrl}/api/auth/callback/google`;
 
   const searchParams = req.nextUrl.searchParams;

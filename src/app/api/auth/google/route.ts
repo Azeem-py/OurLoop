@@ -10,9 +10,10 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Determine redirect URI - Google requires the exact registered redirect URI
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
-  const redirectUri = `${baseUrl}/api/auth/callback/google`;
+  // Determine redirect URI dynamically from request host/headers
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || req.nextUrl.host;
+  const proto = req.headers.get("x-forwarded-proto") || (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
+  const redirectUri = `${proto}://${host}/api/auth/callback/google`;
 
   // Generate cryptographically secure state for CSRF protection
   const state = crypto.randomBytes(24).toString("hex");
