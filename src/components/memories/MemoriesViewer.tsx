@@ -119,16 +119,20 @@ export function MemoriesViewer({ initialMemories }: MemoriesViewerProps) {
     setBurstingHeart(memoryId);
     setTimeout(() => setBurstingHeart(null), 900);
 
-    confetti({
-      particleCount: 32,
-      spread: 65,
-      origin: { y: 0.6 },
-      colors: ["#E26D54", "#E5B268", "#F6F3EE"],
-      ticks: 120,
-      gravity: 1.2,
-      shapes: ["circle"],
-      scalar: 0.9,
-    });
+    try {
+      confetti({
+        particleCount: 32,
+        spread: 65,
+        origin: { y: 0.6 },
+        colors: ["#E26D54", "#E5B268", "#F6F3EE"],
+        ticks: 120,
+        gravity: 1.2,
+        shapes: ["circle"],
+        scalar: 0.9,
+      });
+    } catch {
+      // Ignore canvas errors on low-spec/legacy devices
+    }
   }
 
   const currentMemory = memories[currentIndex] || null;

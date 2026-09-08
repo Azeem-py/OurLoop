@@ -2,8 +2,8 @@
 
 import { useState, useRef } from "react";
 import { X, MapPin, Calendar, UploadCloud, Loader2, Camera, RefreshCw } from "lucide-react";
-import imageCompression from "browser-image-compression";
 import { CameraModal } from "@/components/common/CameraModal";
+import { safeCompressImage } from "@/lib/imageOptimization";
 
 interface UploadMemoryModalProps {
   isOpen: boolean;
@@ -29,18 +29,12 @@ export function UploadMemoryModal({ isOpen, onClose, onSuccess }: UploadMemoryMo
     setIsVideo(isVid);
 
     if (!isVid && selected.type.startsWith("image/")) {
-      try {
-        const compressed = await imageCompression(selected, {
-          maxSizeMB: 1.5,
-          maxWidthOrHeight: 1920,
-          useWebWorker: true,
-        });
-        setFile(compressed);
-        setPreview(URL.createObjectURL(compressed));
-      } catch {
-        setFile(selected);
-        setPreview(URL.createObjectURL(selected));
-      }
+      const fileToUse = await safeCompressImage(selected, {
+        maxSizeMB: 1.5,
+        maxWidthOrHeight: 1920,
+      });
+      setFile(fileToUse);
+      setPreview(URL.createObjectURL(fileToUse));
     } else {
       setFile(selected);
       setPreview(URL.createObjectURL(selected));

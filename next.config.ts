@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  transpilePackages: [
+    "lucide-react",
+    "framer-motion",
+    "date-fns",
+    "canvas-confetti",
+    "browser-image-compression",
+  ],
 };
 
 export default nextConfig;

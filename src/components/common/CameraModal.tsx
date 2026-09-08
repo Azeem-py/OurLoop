@@ -69,6 +69,11 @@ export function CameraModal({
           audio: false,
         };
 
+        if (!navigator.mediaDevices?.getUserMedia) {
+          setCameraError("Live camera streaming is not supported on this browser/device. Please tap below to snap or choose a photo via your native camera.");
+          return;
+        }
+
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
         if (!isMounted) {

@@ -123,6 +123,8 @@ export function NotificationSettingsModal({
                 </>
               ) : permission === "denied" ? (
                 <span className="text-rose-400">Blocked by Browser</span>
+              ) : permission === "unsupported" ? (
+                <span className="text-[#9992A8]">Not Supported</span>
               ) : (
                 <span className="text-amber-300">Not Enabled</span>
               )}
@@ -130,15 +132,23 @@ export function NotificationSettingsModal({
           </div>
         </div>
 
-        {/* iOS Warning if in Safari tab */}
-        {iosDevice && !standalone && (
+        {/* Unsupported Device Banner */}
+        {permission === "unsupported" ? (
+          <div className="mb-4 p-3 rounded-2xl bg-[#201D2B] border border-[#292536] text-xs text-[#BBB4CA] flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-[#E5B268] shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              Web Push notifications require <strong>iOS 16.4+</strong>. On older devices, notifications are unavailable, but photos, diary, and chat work smoothly!
+            </p>
+          </div>
+        ) : iosDevice && !standalone ? (
+          /* iOS Warning if in Safari tab */
           <div className="mb-4 p-3 rounded-2xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-200 flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
               On iPhone, Apple requires OurLoop to be added to your <strong>Home Screen</strong> before notifications can be delivered.
             </p>
           </div>
-        )}
+        ) : null}
 
         {testStatus && (
           <div
@@ -178,6 +188,14 @@ export function NotificationSettingsModal({
                 Disable on this device
               </button>
             </>
+          ) : permission === "unsupported" ? (
+            <button
+              disabled
+              className="w-full py-2.5 px-4 bg-[#201D2B] text-[#787285] font-semibold text-xs rounded-xl border border-[#292536] transition-all flex items-center justify-center gap-2 cursor-not-allowed"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              Unavailable on this Device
+            </button>
           ) : (
             <button
               onClick={handleToggle}

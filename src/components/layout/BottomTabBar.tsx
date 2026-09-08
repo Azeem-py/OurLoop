@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, Sparkles, BookOpen, MessageCircle } from "lucide-react";
+import { Heart, Sparkles, BookOpen, MessageCircle, Gamepad2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function BottomTabBar() {
@@ -28,6 +28,7 @@ export function BottomTabBar() {
   const tabs = [
     { name: "Home", href: "/", icon: Heart },
     { name: "Memories", href: "/memories", icon: Sparkles },
+    { name: "Games", href: "/games", icon: Gamepad2 },
     { name: "Diary", href: "/diary", icon: BookOpen },
     { name: "Chat", href: "/chat", icon: MessageCircle, badge: unreadCount },
   ];
@@ -36,7 +37,7 @@ export function BottomTabBar() {
     <nav className="h-16 border-t border-[#242031] bg-[#14121A]/95 backdrop-blur-md px-4 flex items-center justify-around z-30 shrink-0 select-none md:hidden">
       {tabs.map((tab) => {
         const Icon = tab.icon;
-        const isActive = pathname === tab.href;
+        const isActive = pathname === tab.href || (tab.href !== "/" && pathname.startsWith(tab.href));
 
         return (
           <Link

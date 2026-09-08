@@ -2,8 +2,8 @@
 
 import { useState, useRef } from "react";
 import { X, Lock, Loader2, ImagePlus, Trash2, Camera } from "lucide-react";
-import imageCompression from "browser-image-compression";
 import { CameraModal } from "@/components/common/CameraModal";
+import { safeCompressImage } from "@/lib/imageOptimization";
 
 interface DiaryComposeModalProps {
   isOpen: boolean;
@@ -40,26 +40,14 @@ export function DiaryComposeModal({ isOpen, onClose, onSuccess }: DiaryComposeMo
   if (!isOpen) return null;
 
   async function processSelectedImage(file: File) {
-    try {
-      // Compress if larger than 1MB
-      let fileToUse = file;
-      if (file.size > 1024 * 1024) {
-        setUploadProgress("Optimizing image...");
-        fileToUse = await imageCompression(file, {
-          maxSizeMB: 1,
-          maxWidthOrHeight: 1600,
-          useWebWorker: true,
-        });
-      }
-      setImageFile(fileToUse);
-      setImagePreview(URL.createObjectURL(fileToUse));
-      setUploadProgress(null);
-    } catch (err) {
-      console.warn("Image compression fallback:", err);
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-      setUploadProgress(null);
-    }
+    setUploadProgress("Optimizing image...");
+    const fileToUse = await safeCompressImage(file, {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1600,
+    });
+    setImageFile(fileToUse);
+    setImagePreview(URL.createObjectURL(fileToUse));
+    setUploadProgress(null);
   }
 
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {

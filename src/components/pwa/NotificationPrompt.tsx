@@ -24,7 +24,7 @@ export function NotificationPrompt({ partnerName = "your partner" }: Notificatio
     if (isIOS() && !isStandalone()) return;
 
     // Check if already granted or denied
-    if (Notification.permission !== "default") return;
+    if (typeof Notification === "undefined" || Notification.permission !== "default") return;
 
     // Check if dismissed in this session or recently
     const dismissed = sessionStorage.getItem("ourloop_notif_prompt_dismissed");

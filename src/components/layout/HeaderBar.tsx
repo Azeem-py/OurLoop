@@ -4,6 +4,7 @@ import { useState } from "react";
 import { LogOut, Copy, Check, HeartHandshake, Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { NotificationSettingsModal } from "../pwa/NotificationSettingsModal";
+import { copyToClipboard } from "@/lib/clipboard";
 
 interface HeaderBarProps {
   user: {
@@ -29,11 +30,13 @@ export function HeaderBar({ user, partner, inviteCode }: HeaderBarProps) {
     router.refresh();
   }
 
-  function handleCopyInvite() {
+  async function handleCopyInvite() {
     if (!inviteCode) return;
-    navigator.clipboard.writeText(inviteCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const ok = await copyToClipboard(inviteCode);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   }
 
   const youName = user.nickname || user.displayName;

@@ -8,12 +8,14 @@ import {
   Sparkles,
   BookOpen,
   MessageCircle,
+  Gamepad2,
   LogOut,
   Copy,
   Check,
   Bell,
 } from "lucide-react";
 import { NotificationSettingsModal } from "../pwa/NotificationSettingsModal";
+import { copyToClipboard } from "@/lib/clipboard";
 
 interface DesktopSidebarProps {
   user: {
@@ -54,11 +56,13 @@ export function DesktopSidebar({ user, partner, inviteCode }: DesktopSidebarProp
     router.refresh();
   }
 
-  function handleCopyInvite() {
+  async function handleCopyInvite() {
     if (!inviteCode) return;
-    navigator.clipboard.writeText(inviteCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const ok = await copyToClipboard(inviteCode);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   }
 
   const youName = user.nickname || user.displayName;
@@ -67,6 +71,7 @@ export function DesktopSidebar({ user, partner, inviteCode }: DesktopSidebarProp
   const navItems = [
     { name: "Home", href: "/", icon: Heart },
     { name: "Memories", href: "/memories", icon: Sparkles },
+    { name: "Games", href: "/games", icon: Gamepad2 },
     { name: "Diary", href: "/diary", icon: BookOpen },
     { name: "Chat", href: "/chat", icon: MessageCircle, badge: unreadCount },
   ];
@@ -141,7 +146,7 @@ export function DesktopSidebar({ user, partner, inviteCode }: DesktopSidebarProp
         <nav className="space-y-1.5">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
 
             return (
               <Link

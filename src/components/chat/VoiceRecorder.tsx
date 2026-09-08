@@ -17,6 +17,12 @@ export function VoiceRecorder({ onSendVoiceNote }: VoiceRecorderProps) {
   const managerRef = useRef<VoiceRecorderManager | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // iOS 12 / Safari 12 does not support MediaRecorder
+  const isSupported = typeof window !== "undefined" && typeof MediaRecorder !== "undefined";
+  if (!isSupported) {
+    return null;
+  }
+
   async function startRecording() {
     try {
       const manager = new VoiceRecorderManager();

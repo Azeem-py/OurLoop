@@ -26,6 +26,9 @@ model User {
   messagesSent      Message[]
   reactions         Reaction[]
   pushSubscriptions PushSubscription[]
+  gamesInitiated    GameSession[]      @relation("GamesInitiated")
+  currentTurnGames  GameSession[]      @relation("CurrentTurnGames")
+  gamesWon          GameSession[]      @relation("GamesWon")
 }
 
 model Couple {
@@ -42,6 +45,7 @@ model Couple {
   diaryEntries DiaryEntry[]
   messages     Message[]
   mediaFiles   MediaFile[]
+  games        GameSession[]
 }
 
 model CoupleMember {
@@ -165,4 +169,39 @@ model PushSubscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+enum GameType {
+  TIC_TAC_TOE
+  CONNECT_FOUR
+}
+
+enum GameStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+model GameSession {
+  id                String      @id @default(uuid())
+  coupleId          String
+  gameType          GameType
+  status            GameStatus  @default(IN_PROGRESS)
+  initiatorId       String
+  currentTurnUserId String
+  winnerId          String?
+  isDraw            Boolean     @default(false)
+  stakes            String?
+  gameState         Json
+  lastMoveAt        DateTime    @default(now())
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  couple            Couple      @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  initiator         User        @relation("GamesInitiated", fields: [initiatorId], references: [id], onDelete: Cascade)
+  currentTurnUser   User        @relation("CurrentTurnGames", fields: [currentTurnUserId], references: [id], onDelete: Cascade)
+  winner            User?       @relation("GamesWon", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  @@index([coupleId, status])
+  @@index([currentTurnUserId])
 }

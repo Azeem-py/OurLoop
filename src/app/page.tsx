@@ -5,8 +5,9 @@ import { CountdownWidget } from "@/components/common/CountdownWidget";
 import { OnThisDayCard } from "@/components/common/OnThisDayCard";
 import { listMemories, getOnThisDayItem } from "@/lib/db/memories";
 import { listDiaryEntries } from "@/lib/db/diary";
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Sparkles, BookOpen, ArrowRight, Camera } from "lucide-react";
+import { Sparkles, BookOpen, ArrowRight, Camera, Gamepad2 } from "lucide-react";
 import { format } from "date-fns";
 
 export default async function HomePage() {
@@ -20,10 +21,18 @@ export default async function HomePage() {
     redirect("/pair");
   }
 
-  const [memories, onThisDay, diaryEntries] = await Promise.all([
+  const [memories, onThisDay, diaryEntries, pendingTurnGame] = await Promise.all([
     listMemories(user.coupleId),
     getOnThisDayItem(user.coupleId),
     listDiaryEntries(user.coupleId, user.id),
+    prisma.gameSession.findFirst({
+      where: {
+        coupleId: user.coupleId,
+        status: "IN_PROGRESS",
+        currentTurnUserId: user.id,
+      },
+      orderBy: { lastMoveAt: "desc" },
+    }),
   ]);
 
   const latestMemory = memories[0] || null;
@@ -46,6 +55,39 @@ export default async function HomePage() {
               anniversaryDate={user.couple?.anniversaryDate?.toISOString()}
               nextVisitDate={user.couple?.nextVisitDate?.toISOString()}
             />
+
+            {pendingTurnGame && (
+              <Link
+                href={`/games/${pendingTurnGame.id}`}
+                className="block p-4 rounded-3xl bg-gradient-to-r from-[#E26D54]/20 via-[#1E1929] to-[#171520] border border-[#E26D54]/50 hover:border-[#E26D54] shadow-[0_0_20px_rgba(226,109,84,0.2)] transition-all group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-[#E26D54] text-white flex items-center justify-center shadow-md shadow-[#E26D54]/30 animate-pulse">
+                      <Gamepad2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-[#F6F3EE]">
+                          It&apos;s Your Turn!
+                        </span>
+                        <span className="text-[10px] bg-[#E26D54]/30 text-[#E26D54] font-bold px-2 py-0.5 rounded-full border border-[#E26D54]/40">
+                          Active Match
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#9992A8] mt-0.5">
+                        {pendingTurnGame.gameType === "TIC_TAC_TOE" ? "Hearts & Kisses" : "Four in a Row"}
+                        {pendingTurnGame.stakes && ` • Stakes: ${pendingTurnGame.stakes}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-xs font-semibold text-[#E26D54] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                    <span>Play Move</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </div>
+                </div>
+              </Link>
+            )}
 
             {/* Latest Diary Entry Excerpt */}
             <div className="rounded-3xl bg-[#171520] border border-[#292536] p-5 shadow-sm">

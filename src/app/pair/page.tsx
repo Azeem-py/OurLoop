@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { HeartHandshake, Copy, Check, Share2, Sparkles, ArrowRight, Loader2 } from "lucide-react";
+import { copyToClipboard } from "@/lib/clipboard";
 
 export default function PairPage() {
   const router = useRouter();
@@ -98,11 +99,13 @@ export default function PairPage() {
     }
   }
 
-  function handleCopy() {
+  async function handleCopy() {
     if (!inviteCode) return;
-    navigator.clipboard.writeText(inviteCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const ok = await copyToClipboard(inviteCode);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   }
 
   function handleShareWhatsApp() {
