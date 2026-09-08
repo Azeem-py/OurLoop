@@ -26,9 +26,10 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { gameType, stakes, whoStarts } = body;
+    const { gameType, stakes, whoStarts, targetWord, hint } = body;
 
-    if (!gameType || !["TIC_TAC_TOE", "CONNECT_FOUR"].includes(gameType)) {
+    const validGameTypes = ["TIC_TAC_TOE", "CONNECT_FOUR", "WORDLE", "WHOS_MOST_LIKELY"];
+    if (!gameType || !validGameTypes.includes(gameType)) {
       return NextResponse.json({ error: "Valid gameType is required" }, { status: 400 });
     }
 
@@ -46,12 +47,19 @@ export async function POST(req: Request) {
       gameType,
       stakes,
       whoStarts: whoStarts === "partner" ? "partner" : "me",
+      targetWord,
+      hint,
     });
 
     // Notify partner of game challenge if partner exists and isn't self
     if (partnerId !== user.id) {
       const senderName = user.nickname || user.displayName;
-      const gameLabel = gameType === "TIC_TAC_TOE" ? "Hearts & Kisses" : "Four in a Row";
+      let gameLabel = "Mini-Game";
+      if (gameType === "TIC_TAC_TOE") gameLabel = "Hearts & Kisses";
+      if (gameType === "CONNECT_FOUR") gameLabel = "Four in a Row";
+      if (gameType === "WORDLE") gameLabel = "Couple Wordle";
+      if (gameType === "WHOS_MOST_LIKELY") gameLabel = "Who's Most Likely";
+
       const bodyText = stakes
         ? `${senderName} challenged you to ${gameLabel}! Stakes: ${stakes}`
         : `${senderName} challenged you to a game of ${gameLabel}!`;

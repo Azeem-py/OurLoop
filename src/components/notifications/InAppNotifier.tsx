@@ -84,10 +84,11 @@ export function InAppNotifier() {
             lastSeenGameTurnKeyRef.current = gameTurnKey;
 
             if (!isCurrentlyInThisGame) {
-              const gameLabel =
-                activeTurnGame.gameType === "TIC_TAC_TOE"
-                  ? "Hearts & Kisses"
-                  : "Four in a Row";
+              let gameLabel = "Mini-Game";
+              if (activeTurnGame.gameType === "TIC_TAC_TOE") gameLabel = "Hearts & Kisses";
+              else if (activeTurnGame.gameType === "CONNECT_FOUR") gameLabel = "Four in a Row";
+              else if (activeTurnGame.gameType === "WORDLE") gameLabel = "Couple Wordle";
+              else if (activeTurnGame.gameType === "WHOS_MOST_LIKELY") gameLabel = "Who's Most Likely";
 
               showNotification({
                 id: `game-${activeTurnGame.id}-${Date.now()}`,

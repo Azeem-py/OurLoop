@@ -7,7 +7,16 @@ import { RotateCcw, AlertCircle } from "lucide-react";
 import { GameHeader } from "./GameHeader";
 import { TicTacToeBoard } from "./TicTacToeBoard";
 import { ConnectFourBoard } from "./ConnectFourBoard";
-import { GameType, GameStatus, TicTacToeState, ConnectFourState } from "@/lib/games/types";
+import { WordleBoard } from "./WordleBoard";
+import { WhosMostLikelyBoard } from "./WhosMostLikelyBoard";
+import {
+  GameType,
+  GameStatus,
+  TicTacToeState,
+  ConnectFourState,
+  WordleState,
+  WhosMostLikelyState,
+} from "@/lib/games/types";
 
 interface GameArenaProps {
   initialGame: {
@@ -56,11 +65,11 @@ export function GameArena({ initialGame, currentUserId, partner }: GameArenaProp
 
   // Trigger celebratory confetti on victory
   useEffect(() => {
-    if (game.status === "COMPLETED" && game.winnerId === currentUserId) {
+    if (game.status === "COMPLETED" && (game.winnerId === currentUserId || (game.gameType === "WHOS_MOST_LIKELY" && game.isDraw))) {
       if (prevStatusRef.current !== "COMPLETED") {
         try {
           confetti({
-            particleCount: 50, // lower count for low-power mobile GPUs
+            particleCount: 50,
             spread: 60,
             origin: { y: 0.6 },
             colors: ["#E26D54", "#F43F5E", "#FBBF24"],
@@ -71,14 +80,13 @@ export function GameArena({ initialGame, currentUserId, partner }: GameArenaProp
       }
     }
     prevStatusRef.current = game.status;
-  }, [game.status, game.winnerId, currentUserId]);
+  }, [game.status, game.winnerId, currentUserId, game.gameType, game.isDraw]);
 
-  // Real-time polling sync with battery and memory optimizations
+  // Real-time polling sync
   useEffect(() => {
     if (isGameOver) return;
 
     const interval = setInterval(async () => {
-      // Pause polling if user locked screen or minimized browser
       if (typeof document !== "undefined" && document.hidden) return;
 
       try {
@@ -88,7 +96,6 @@ export function GameArena({ initialGame, currentUserId, partner }: GameArenaProp
         if (res.ok) {
           const data = await res.json();
           if (data.game) {
-            // Avoid re-rendering if game has not changed
             setGame((prev) => {
               if (
                 prev.status === data.game.status &&
@@ -109,8 +116,14 @@ export function GameArena({ initialGame, currentUserId, partner }: GameArenaProp
     return () => clearInterval(interval);
   }, [game.id, isGameOver]);
 
-  async function handleMove(movePayload: { index?: number; col?: number }) {
-    if (!isMyTurn || isGameOver || isSubmittingMove) return;
+  async function handleMove(movePayload: {
+    index?: number;
+    col?: number;
+    guess?: string;
+    questionIndex?: number;
+    votedUserId?: string;
+  }) {
+    if (isGameOver || isSubmittingMove) return;
 
     setIsSubmittingMove(true);
     setErrorMessage(null);
@@ -205,7 +218,7 @@ export function GameArena({ initialGame, currentUserId, partner }: GameArenaProp
 
       {/* Game Board */}
       <div className="flex justify-center my-1">
-        {game.gameType === "TIC_TAC_TOE" ? (
+        {game.gameType === "TIC_TAC_TOE" && (
           <TicTacToeBoard
             gameState={game.gameState as unknown as TicTacToeState}
             currentUserId={currentUserId}
@@ -215,7 +228,9 @@ export function GameArena({ initialGame, currentUserId, partner }: GameArenaProp
             onMove={(index) => handleMove({ index })}
             disabled={isSubmittingMove}
           />
-        ) : (
+        )}
+
+        {game.gameType === "CONNECT_FOUR" && (
           <ConnectFourBoard
             gameState={game.gameState as unknown as ConnectFourState}
             currentUserId={currentUserId}
@@ -223,6 +238,32 @@ export function GameArena({ initialGame, currentUserId, partner }: GameArenaProp
             isMyTurn={isMyTurn}
             isGameOver={isGameOver}
             onMove={(col) => handleMove({ col })}
+            disabled={isSubmittingMove}
+          />
+        )}
+
+        {game.gameType === "WORDLE" && (
+          <WordleBoard
+            gameState={game.gameState as unknown as WordleState}
+            currentUserId={currentUserId}
+            initiatorId={game.initiatorId}
+            isMyTurn={isMyTurn}
+            isGameOver={isGameOver}
+            onGuess={(guess) => handleMove({ guess })}
+            disabled={isSubmittingMove}
+          />
+        )}
+
+        {game.gameType === "WHOS_MOST_LIKELY" && (
+          <WhosMostLikelyBoard
+            gameState={game.gameState as unknown as WhosMostLikelyState}
+            currentUserId={currentUserId}
+            currentUser={currentUserObj}
+            partner={partnerUserObj}
+            isGameOver={isGameOver}
+            onVote={(questionIndex, votedUserId) =>
+              handleMove({ questionIndex, votedUserId })
+            }
             disabled={isSubmittingMove}
           />
         )}

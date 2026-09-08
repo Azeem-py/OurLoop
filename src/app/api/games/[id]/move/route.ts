@@ -27,7 +27,11 @@ export async function POST(req: Request, { params }: Props) {
     // Send push notification to partner
     if (partnerId && partnerId !== user.id) {
       const senderName = user.nickname || user.displayName;
-      const gameLabel = game.gameType === "TIC_TAC_TOE" ? "Hearts & Kisses" : "Four in a Row";
+      let gameLabel = "Mini-Game";
+      if (game.gameType === "TIC_TAC_TOE") gameLabel = "Hearts & Kisses";
+      if (game.gameType === "CONNECT_FOUR") gameLabel = "Four in a Row";
+      if (game.gameType === "WORDLE") gameLabel = "Couple Wordle";
+      if (game.gameType === "WHOS_MOST_LIKELY") gameLabel = "Who's Most Likely";
 
       if (moveResult.isWon) {
         sendPushToUser(partnerId, {
