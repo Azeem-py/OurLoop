@@ -2,7 +2,7 @@ import { prisma } from "../prisma";
 import { ContentType } from "@prisma/client";
 
 export async function listMessages(coupleId: string, limit = 150) {
-  return prisma.message.findMany({
+  const messages = await prisma.message.findMany({
     where: { coupleId },
     orderBy: { createdAt: "asc" },
     take: limit,
@@ -27,6 +27,46 @@ export async function listMessages(coupleId: string, limit = 150) {
       },
     },
   });
+
+  const replyToIds = Array.from(
+    new Set(messages.map((m) => m.replyToId).filter(Boolean) as string[])
+  );
+
+  const replyToMap = new Map<
+    string,
+    { id: string; text?: string | null; contentType: string; senderName: string }
+  >();
+
+  if (replyToIds.length > 0) {
+    const parentMessages = await prisma.message.findMany({
+      where: { id: { in: replyToIds } },
+      select: {
+        id: true,
+        text: true,
+        contentType: true,
+        sender: {
+          select: {
+            displayName: true,
+            nickname: true,
+          },
+        },
+      },
+    });
+
+    for (const pm of parentMessages) {
+      replyToMap.set(pm.id, {
+        id: pm.id,
+        text: pm.text,
+        contentType: pm.contentType,
+        senderName: pm.sender.nickname || pm.sender.displayName,
+      });
+    }
+  }
+
+  return messages.map((m) => ({
+    ...m,
+    replyTo: m.replyToId ? replyToMap.get(m.replyToId) || null : null,
+  }));
 }
 
 export async function createMessage(
@@ -40,7 +80,7 @@ export async function createMessage(
     durationSec?: number;
   }
 ) {
-  return prisma.message.create({
+  const message = await prisma.message.create({
     data: {
       coupleId,
       senderId,
@@ -62,6 +102,34 @@ export async function createMessage(
       reactions: true,
     },
   });
+
+  let replyTo = null;
+  if (data.replyToId) {
+    const parent = await prisma.message.findUnique({
+      where: { id: data.replyToId },
+      select: {
+        id: true,
+        text: true,
+        contentType: true,
+        sender: {
+          select: { displayName: true, nickname: true },
+        },
+      },
+    });
+    if (parent) {
+      replyTo = {
+        id: parent.id,
+        text: parent.text,
+        contentType: parent.contentType,
+        senderName: parent.sender.nickname || parent.sender.displayName,
+      };
+    }
+  }
+
+  return {
+    ...message,
+    replyTo,
+  };
 }
 
 export async function markMessagesAsRead(coupleId: string, currentUserId: string) {
