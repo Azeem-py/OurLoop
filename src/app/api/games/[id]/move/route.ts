@@ -28,10 +28,11 @@ export async function POST(req: Request, { params }: Props) {
     if (partnerId && partnerId !== user.id) {
       const senderName = user.nickname || user.displayName;
       let gameLabel = "Mini-Game";
-      if (game.gameType === "TIC_TAC_TOE") gameLabel = "Hearts & Kisses";
-      if (game.gameType === "CONNECT_FOUR") gameLabel = "Four in a Row";
-      if (game.gameType === "WORDLE") gameLabel = "Couple Wordle";
-      if (game.gameType === "WHOS_MOST_LIKELY") gameLabel = "Who's Most Likely";
+      const gType = String(game.gameType);
+      if (gType === "TIC_TAC_TOE") gameLabel = "Hearts & Kisses";
+      if (gType === "CONNECT_FOUR") gameLabel = "Four in a Row";
+      if (gType === "WORDLE") gameLabel = "Couple Wordle";
+      if (gType === "WHOS_MOST_LIKELY") gameLabel = "Who's Most Likely";
 
       if (moveResult.isWon) {
         sendPushToUser(partnerId, {
