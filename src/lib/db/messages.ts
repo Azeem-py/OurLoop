@@ -1,10 +1,10 @@
 import { prisma } from "../prisma";
 import { ContentType } from "@prisma/client";
 
-export async function listMessages(coupleId: string, limit = 150) {
+export async function listMessages(coupleId: string, limit = 200) {
   const messages = await prisma.message.findMany({
     where: { coupleId },
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" },
     take: limit,
     include: {
       sender: {
@@ -27,6 +27,9 @@ export async function listMessages(coupleId: string, limit = 150) {
       },
     },
   });
+
+  // Reverse so the messages appear in chronological order (oldest -> newest) in the chat
+  messages.reverse();
 
   const replyToIds = Array.from(
     new Set(messages.map((m) => m.replyToId).filter(Boolean) as string[])
