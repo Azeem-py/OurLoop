@@ -183,3 +183,26 @@ export async function getUnreadCount(coupleId: string, currentUserId: string) {
     },
   });
 }
+
+export async function deleteMessage(coupleId: string, messageId: string) {
+  const message = await prisma.message.findFirst({
+    where: {
+      id: messageId,
+      coupleId,
+    },
+  });
+
+  if (!message) {
+    return null;
+  }
+
+  // Explicitly remove reactions first for foreign key integrity
+  await prisma.reaction.deleteMany({
+    where: { messageId },
+  });
+
+  return prisma.message.delete({
+    where: { id: messageId },
+  });
+}
+

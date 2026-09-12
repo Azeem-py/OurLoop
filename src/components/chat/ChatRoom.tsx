@@ -12,12 +12,14 @@ import {
   Reply,
   X,
   ChevronDown,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { VoiceNotePlayer } from "./VoiceNotePlayer";
 import { CameraModal } from "@/components/common/CameraModal";
 import { ChatMediaModal } from "./ChatMediaModal";
+import { DeleteMessageModal } from "./DeleteMessageModal";
 
 export interface ChatMessageItem {
   id: string;
@@ -76,6 +78,8 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
   const [replyingTo, setReplyingTo] = useState<ChatMessageItem | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [activeMediaModalMessage, setActiveMediaModalMessage] = useState<ChatMessageItem | null>(null);
+  const [messageToDelete, setMessageToDelete] = useState<ChatMessageItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
   const [hasUnseenNewMessage, setHasUnseenNewMessage] = useState(false);
@@ -432,6 +436,45 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
     }
   }
 
+  async function handleDeleteMessage(msg: ChatMessageItem) {
+    setIsDeleting(true);
+    const previousMessages = messages;
+
+    // Optimistic removal from UI
+    setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+    if (replyingTo?.id === msg.id) {
+      setReplyingTo(null);
+    }
+    if (activeMediaModalMessage?.id === msg.id) {
+      setActiveMediaModalMessage(null);
+    }
+
+    try {
+      const res = await fetch(`/api/messages/${msg.id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        // Fallback to query parameter endpoint
+        const fallbackRes = await fetch(`/api/messages?id=${msg.id}`, {
+          method: "DELETE",
+        });
+        if (!fallbackRes.ok) {
+          throw new Error("Failed to delete message");
+        }
+      }
+
+      setMessageToDelete(null);
+    } catch (err) {
+      console.error("Delete message error:", err);
+      // Revert optimistic deletion on failure
+      setMessages(previousMessages);
+      alert("Could not delete message. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#0E0D13] relative">
       {/* Messages Scroll Area */}
@@ -612,21 +655,35 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
                     </div>
                   </div>
 
-                  {/* Desktop Quick Reply Button on Hover */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      startReply(msg);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full hover:bg-white/10 text-[#9992A8] hover:text-[#F6F3EE] shrink-0 hidden sm:block"
-                    title="Reply"
-                  >
-                    <Reply className="w-3.5 h-3.5" />
-                  </button>
+                  {/* Desktop Quick Actions on Hover */}
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 shrink-0 hidden sm:flex">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startReply(msg);
+                      }}
+                      className="p-1.5 rounded-full hover:bg-white/10 text-[#9992A8] hover:text-[#F6F3EE] transition-colors"
+                      title="Reply"
+                    >
+                      <Reply className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveReactionMessageId(null);
+                        setMessageToDelete(msg);
+                      }}
+                      className="p-1.5 rounded-full hover:bg-rose-500/15 text-[#9992A8] hover:text-rose-400 transition-colors"
+                      title="Delete message"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
-                {/* Emoji Reaction Bar + Reply Action (Popup on tap) */}
+                {/* Emoji Reaction Bar + Reply & Delete Actions (Popup on tap) */}
                 {activeReactionMessageId === msg.id && (
                   <div className="flex items-center gap-1 p-1 bg-[#14121A] border border-[#292536] rounded-full shadow-2xl mt-1.5 z-20 animate-in fade-in zoom-in-95">
                     {QUICK_EMOJIS.map((emoji) => (
@@ -653,6 +710,20 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
                     >
                       <Reply className="w-3.5 h-3.5" />
                       <span>Reply</span>
+                    </button>
+                    <div className="w-[1px] h-4 bg-[#292536] mx-0.5" />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveReactionMessageId(null);
+                        setMessageToDelete(msg);
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-rose-400 hover:bg-rose-500/15 hover:text-rose-300 transition-colors"
+                      title="Delete message"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
                     </button>
                   </div>
                 )}
@@ -759,7 +830,7 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
         )}
 
         {/* Subtle partner typing notice if user is scrolled up */}
-        {isPartnerTyping && !isAtBottomRef.current && (
+        {isPartnerTyping && showScrollBottomBtn && (
           <div className="max-w-3xl lg:max-w-4xl mx-auto w-full mb-2 px-1 flex items-center gap-1.5 text-[11px] text-[#E26D54] font-medium animate-pulse">
             <span className="w-1.5 h-1.5 rounded-full bg-[#E26D54]" />
             <span>{partnerName} is typing...</span>
@@ -855,7 +926,23 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
         message={activeMediaModalMessage}
         onClose={() => setActiveMediaModalMessage(null)}
         onSaveToGallery={handleSaveToGallery}
+        onDelete={(msg) => {
+          setMessageToDelete(msg);
+        }}
         isSaved={Boolean(activeMediaModalMessage && savedToGalleryId === activeMediaModalMessage.id)}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteMessageModal
+        isOpen={Boolean(messageToDelete)}
+        message={messageToDelete}
+        currentUserId={currentUserId}
+        partnerName={partnerName}
+        onClose={() => {
+          if (!isDeleting) setMessageToDelete(null);
+        }}
+        onConfirm={handleDeleteMessage}
+        isDeleting={isDeleting}
       />
     </div>
   );

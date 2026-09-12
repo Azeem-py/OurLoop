@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Download, BookmarkPlus, Check } from "lucide-react";
+import { X, Download, BookmarkPlus, Check, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ChatMessageItem } from "./ChatRoom";
 
@@ -9,6 +9,7 @@ interface ChatMediaModalProps {
   message: ChatMessageItem | null;
   onClose: () => void;
   onSaveToGallery?: (message: ChatMessageItem) => void;
+  onDelete?: (message: ChatMessageItem) => void;
   isSaved?: boolean;
 }
 
@@ -16,6 +17,7 @@ export function ChatMediaModal({
   message,
   onClose,
   onSaveToGallery,
+  onDelete,
   isSaved,
 }: ChatMediaModalProps) {
   const [downloading, setDownloading] = useState(false);
@@ -132,6 +134,17 @@ export function ChatMediaModal({
           >
             <Download className="w-5 h-5" />
           </button>
+
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(message)}
+              className="p-2 rounded-full hover:bg-rose-500/20 text-white/80 hover:text-rose-400 transition-colors"
+              title="Delete media"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
 
