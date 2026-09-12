@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { listMessages, createMessage, markMessagesAsRead } from "@/lib/db/messages";
 import { ContentType } from "@prisma/client";
 import { sendPushToPartner } from "@/lib/push";
+import { isPartnerTyping, clearTyping } from "@/lib/typingTracker";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -14,7 +15,9 @@ export async function GET() {
   // Mark partner messages as read
   await markMessagesAsRead(user.coupleId, user.id);
 
-  return NextResponse.json({ messages });
+  const partnerTyping = isPartnerTyping(user.coupleId, user.id);
+
+  return NextResponse.json({ messages, isPartnerTyping: partnerTyping });
 }
 
 export async function POST(req: NextRequest) {
@@ -38,6 +41,9 @@ export async function POST(req: NextRequest) {
       replyToId,
       durationSec,
     });
+
+    // Clear typing state as soon as message is sent
+    clearTyping(user.coupleId, user.id);
 
     const senderName = user.nickname || user.displayName || "Your love";
     let bodyPreview = text || "Sent you a message";

@@ -77,6 +77,7 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
 
   const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
   const [hasUnseenNewMessage, setHasUnseenNewMessage] = useState(false);
+  const [isPartnerTyping, setIsPartnerTyping] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -84,6 +85,29 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
   const textInputRef = useRef<HTMLInputElement | null>(null);
   const isAtBottomRef = useRef(true);
   const isInitialScrollDone = useRef(false);
+  const lastTypingSentRef = useRef<number>(0);
+  const partnerTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const sendTypingHeartbeat = useCallback((isTyping: boolean) => {
+    const now = Date.now();
+    if (isTyping) {
+      if (now - lastTypingSentRef.current > 2200) {
+        lastTypingSentRef.current = now;
+        fetch("/api/messages/typing", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isTyping: true }),
+        }).catch(() => {});
+      }
+    } else {
+      lastTypingSentRef.current = 0;
+      fetch("/api/messages/typing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isTyping: false }),
+      }).catch(() => {});
+    }
+  }, []);
 
   const checkIfAtBottom = useCallback(() => {
     const container = scrollContainerRef.current;
@@ -156,7 +180,7 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
     };
   }, []); // Run once on mount
 
-  // Periodic poll for live messages (real-time feeling) without breaking scroll
+  // Periodic poll for live messages & partner typing indicator
   useEffect(() => {
     async function syncMessages() {
       try {
@@ -164,6 +188,23 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
         if (res.ok) {
           const data = await res.json();
           const incoming: ChatMessageItem[] = data.messages;
+          const typingNow = Boolean(data.isPartnerTyping);
+
+          setIsPartnerTyping((prev) => {
+            if (!prev && typingNow && isAtBottomRef.current) {
+              setTimeout(() => scrollToBottom("smooth"), 50);
+            }
+            return typingNow;
+          });
+
+          // Local auto-expiration fallback if poll drops
+          if (partnerTypingTimeoutRef.current) clearTimeout(partnerTypingTimeoutRef.current);
+          if (typingNow) {
+            partnerTypingTimeoutRef.current = setTimeout(() => {
+              setIsPartnerTyping(false);
+            }, 5000);
+          }
+
           setMessages((prev) => {
             if (!areMessagesDifferent(prev, incoming)) {
               return prev;
@@ -185,8 +226,11 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
       } catch (err) {}
     }
 
-    const interval = setInterval(syncMessages, 3500);
-    return () => clearInterval(interval);
+    const interval = setInterval(syncMessages, 2800);
+    return () => {
+      clearInterval(interval);
+      if (partnerTypingTimeoutRef.current) clearTimeout(partnerTypingTimeoutRef.current);
+    };
   }, [currentUserId, scrollToBottom]);
 
   const scrollToMessage = (messageId: string) => {
@@ -211,6 +255,9 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
   async function handleSendText(e: React.FormEvent) {
     e.preventDefault();
     if (!text.trim()) return;
+
+    // Instantly clear typing indicator when message is submitted
+    sendTypingHeartbeat(false);
 
     const currentText = text.trim();
     const replyingToSnapshot = replyingTo;
@@ -622,6 +669,21 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
             );
           })
         )}
+        {/* Partner is typing bubble indicator */}
+        {isPartnerTyping && (
+          <div className="flex items-center gap-2 mb-2 animate-in fade-in duration-200">
+            <div className="px-3.5 py-2 rounded-2xl rounded-bl-sm bg-[#1A1824] border border-[#292536] text-[#9992A8] flex items-center gap-2 shadow-sm">
+              <span className="text-xs font-medium text-[#F6F3EE]/80">
+                {partnerName} is typing
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#E26D54] animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#E26D54] animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#E26D54] animate-bounce" />
+              </span>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -687,6 +749,14 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
           </div>
         )}
 
+        {/* Subtle partner typing notice if user is scrolled up */}
+        {isPartnerTyping && !isAtBottomRef.current && (
+          <div className="max-w-3xl lg:max-w-4xl mx-auto w-full mb-2 px-1 flex items-center gap-1.5 text-[11px] text-[#E26D54] font-medium animate-pulse">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#E26D54]" />
+            <span>{partnerName} is typing...</span>
+          </div>
+        )}
+
         <form
           onSubmit={handleSendText}
           className="max-w-3xl lg:max-w-4xl mx-auto w-full flex items-center gap-2"
@@ -737,7 +807,18 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
                 : `Message ${partnerName}...`
             }
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setText(val);
+              if (val.trim()) {
+                sendTypingHeartbeat(true);
+              } else {
+                sendTypingHeartbeat(false);
+              }
+            }}
+            onBlur={() => {
+              sendTypingHeartbeat(false);
+            }}
             className="flex-1 bg-[#1A1824] border border-[#292536] rounded-xl px-4 py-2.5 text-xs sm:text-sm text-[#F6F3EE] placeholder-[#9992A8]/60 focus:outline-none focus:border-[#E26D54]"
           />
 
