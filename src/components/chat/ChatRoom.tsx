@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { VoiceNotePlayer } from "./VoiceNotePlayer";
 import { CameraModal } from "@/components/common/CameraModal";
+import { ChatMediaModal } from "./ChatMediaModal";
 
 export interface ChatMessageItem {
   id: string;
@@ -74,6 +75,7 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [replyingTo, setReplyingTo] = useState<ChatMessageItem | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+  const [activeMediaModalMessage, setActiveMediaModalMessage] = useState<ChatMessageItem | null>(null);
 
   const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
   const [hasUnseenNewMessage, setHasUnseenNewMessage] = useState(false);
@@ -536,12 +538,19 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
                     {(msg.contentType === "IMAGE" || msg.contentType === "VIDEO") &&
                       msg.contentUrl && (
                         <div className="flex flex-col gap-2">
-                          <div className="relative rounded-xl overflow-hidden max-h-72 bg-black/20">
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMediaModalMessage(msg);
+                            }}
+                            className="relative rounded-xl overflow-hidden max-h-72 bg-black/20 cursor-pointer group"
+                            title="Click to view full image"
+                          >
                             {msg.contentType === "IMAGE" ? (
                               <img
                                 src={msg.contentUrl}
                                 alt="Chat media"
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
                                 onLoad={() => {
                                   if (isAtBottomRef.current) {
                                     scrollToBottom("auto");
@@ -839,6 +848,14 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
         onClose={() => setIsCameraOpen(false)}
         onCapture={uploadMediaFile}
         title={`Take Photo for ${partnerName}`}
+      />
+
+      {/* Fullscreen WhatsApp-style Media Lightbox */}
+      <ChatMediaModal
+        message={activeMediaModalMessage}
+        onClose={() => setActiveMediaModalMessage(null)}
+        onSaveToGallery={handleSaveToGallery}
+        isSaved={Boolean(activeMediaModalMessage && savedToGalleryId === activeMediaModalMessage.id)}
       />
     </div>
   );
