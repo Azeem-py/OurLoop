@@ -88,7 +88,7 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
   const checkIfAtBottom = useCallback(() => {
     const container = scrollContainerRef.current;
     if (!container) return true;
-    const threshold = 100;
+    const threshold = 60;
     return container.scrollHeight - container.scrollTop - container.clientHeight <= threshold;
   }, []);
 
@@ -102,26 +102,59 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
   };
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({
-        top: scrollContainerRef.current.scrollHeight,
-        behavior,
-      });
-    } else {
-      messagesEndRef.current?.scrollIntoView({ behavior });
+    const container = scrollContainerRef.current;
+    if (container) {
+      if (behavior === "auto" || behavior === "instant") {
+        container.scrollTop = container.scrollHeight;
+      } else {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior,
+        });
+      }
     }
+    messagesEndRef.current?.scrollIntoView({
+      behavior: behavior === "auto" ? ("instant" as ScrollBehavior) : behavior,
+      block: "end",
+    });
     isAtBottomRef.current = true;
     setShowScrollBottomBtn(false);
     setHasUnseenNewMessage(false);
   }, []);
 
-  // Initial scroll to bottom once on mount
+  // Reliable initial scroll to bottom: fires across microtasks/frames to account for layout & hydration
   useEffect(() => {
-    if (!isInitialScrollDone.current && messages.length > 0) {
-      scrollToBottom("auto");
+    if (messages.length === 0) return;
+
+    const scrollIfAtBottom = () => {
+      if (isAtBottomRef.current) {
+        scrollToBottom("auto");
+      }
+    };
+
+    // Immediate
+    scrollIfAtBottom();
+
+    // After initial paint
+    const rafId = requestAnimationFrame(scrollIfAtBottom);
+
+    // Staggered checks to account for fonts, styles and initial images
+    const t1 = setTimeout(scrollIfAtBottom, 60);
+    const t2 = setTimeout(scrollIfAtBottom, 180);
+    const t3 = setTimeout(scrollIfAtBottom, 350);
+    const t4 = setTimeout(() => {
+      scrollIfAtBottom();
       isInitialScrollDone.current = true;
-    }
-  }, [messages, scrollToBottom]);
+    }, 650);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, []); // Run once on mount
 
   // Periodic poll for live messages (real-time feeling) without breaking scroll
   useEffect(() => {
@@ -462,12 +495,22 @@ export function ChatRoom({ initialMessages, currentUserId, partnerName }: ChatRo
                                 src={msg.contentUrl}
                                 alt="Chat media"
                                 className="w-full h-full object-cover"
+                                onLoad={() => {
+                                  if (isAtBottomRef.current) {
+                                    scrollToBottom("auto");
+                                  }
+                                }}
                               />
                             ) : (
                               <video
                                 src={msg.contentUrl}
                                 controls
                                 className="w-full h-full object-cover max-h-72"
+                                onLoadedMetadata={() => {
+                                  if (isAtBottomRef.current) {
+                                    scrollToBottom("auto");
+                                  }
+                                }}
                               />
                             )}
                           </div>
